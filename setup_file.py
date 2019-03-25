@@ -59,6 +59,7 @@ def potential_diff_2n(gate_charge, bias_potent, extra_electrons):
 
 
 # rate electrons tunnel on to the island from junction 1
+# use of density of states used depends on external boolean defining super_conductor
 def tunnel_rate_1p(gate_charge, bias_potential, extra_electrons):
     if not super_conductor:
         density_of_states = dos_NIN
@@ -70,6 +71,7 @@ def tunnel_rate_1p(gate_charge, bias_potential, extra_electrons):
 
 
 # rate electrons tunnel on to the island from junction 2
+# use of density of states used depends on external boolean defining super_conductor
 def tunnel_rate_2p(gate_charge, bias_potential, extra_electrons):
     if not super_conductor:
         density_of_states = dos_NIN
@@ -81,6 +83,7 @@ def tunnel_rate_2p(gate_charge, bias_potential, extra_electrons):
 
 
 # rate electrons tunnel off of the island from junction 1
+# use of density of states used depends on external boolean defining super_conductor
 def tunnel_rate_1n(gate_charge, bias_potential, extra_electrons):
     if not super_conductor:
         density_of_states = dos_NIN
@@ -92,6 +95,7 @@ def tunnel_rate_1n(gate_charge, bias_potential, extra_electrons):
 
 
 # rate electrons tunnel off of the island from junction 2
+# use of density of states used depends on external boolean defining super_conductor
 def tunnel_rate_2n(gate_charge, bias_potential, extra_electrons):
     if not super_conductor:
         density_of_states = dos_NIN
