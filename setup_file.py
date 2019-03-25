@@ -60,7 +60,8 @@ def potential_diff_2n(gate_charge, bias_potent, extra_electrons):
 
 # rate electrons tunnel on to the island from junction 1
 def tunnel_rate_1p(gate_charge, bias_potential, extra_electrons):
-    density_of_states = dos_NIN
+    if not super_conductor:
+        density_of_states = dos_NIN
     if super_conductor:
         density_of_states = dos_SIN
     f = lambda e: density_of_states(e) * fermi(e) \
@@ -70,7 +71,8 @@ def tunnel_rate_1p(gate_charge, bias_potential, extra_electrons):
 
 # rate electrons tunnel on to the island from junction 2
 def tunnel_rate_2p(gate_charge, bias_potential, extra_electrons):
-    density_of_states = dos_NIN
+    if not super_conductor:
+        density_of_states = dos_NIN
     if super_conductor:
         density_of_states = dos_SIN
     f = lambda e: density_of_states(e) * fermi(e) \
@@ -80,7 +82,8 @@ def tunnel_rate_2p(gate_charge, bias_potential, extra_electrons):
 
 # rate electrons tunnel off of the island from junction 1
 def tunnel_rate_1n(gate_charge, bias_potential, extra_electrons):
-    density_of_states = dos_NIN
+    if not super_conductor:
+        density_of_states = dos_NIN
     if super_conductor:
         density_of_states = dos_SIN
     f = lambda e: density_of_states(e) * (1 - fermi(e)) \
@@ -90,7 +93,8 @@ def tunnel_rate_1n(gate_charge, bias_potential, extra_electrons):
 
 # rate electrons tunnel off of the island from junction 2
 def tunnel_rate_2n(gate_charge, bias_potential, extra_electrons):
-    density_of_states = dos_NIN
+    if not super_conductor:
+        density_of_states = dos_NIN
     if super_conductor:
         density_of_states = dos_SIN
     f = lambda e: density_of_states(e) * (1 - fermi(e)) \
