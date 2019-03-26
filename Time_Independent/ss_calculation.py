@@ -29,6 +29,7 @@ def create_datapoint_dict_steady(gate,bias,n_set,temp,leak,super):
 ########################################################################################################################
 # calculations
 
+# calculates the
 def create_matrix(gate,bias,n_set):
     dim = len(n_set)
     matrix = sp.zeros((dim,dim))
