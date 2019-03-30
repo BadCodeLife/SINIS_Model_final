@@ -137,6 +137,6 @@ def current_point(point,calculated_points):
     current = steady_state(gate=point[Gate_name],bias=point[Bias_name],n_set=point[States_name])
 
     complete_point = copy.deepcopy(point)
-    point[Current_name]=current
+    complete_point[Current_name]=current
 
     calculated_points.append(complete_point)
