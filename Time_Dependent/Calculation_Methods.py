@@ -130,6 +130,76 @@ def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_pe
 
 ########################################################################################################################
 
+def fetch_data(data_file,file_key):
+    try:
+        fetched_data = pd.DataFrame(pd.read_hdf(data_file,file_key,mode='r'))
+    except:
+        fetched_data = pd.DataFrame(columns={Gate_Amp_name,Gate_Func_name, Bias_Func_name,
+                                             Time_Period_name, Number_of_Periods_name, Number_of_Steps_name,
+                                             States_name, Thermal_E_name, Leak_name, Super_Con_name, Current_name})
+    return fetched_data
+
+
+def data_query(data_point, existing_data):
+    point_locations = existing_data[
+        (existing_data[Gate_Amp_name] == data_point[Gate_Amp_name]) &
+        (existing_data[Gate_Func_name] == data_point[Gate_Func_name]) &
+        (existing_data[Bias_Func_name] == data_point[Bias_Func_name]) &
+        (existing_data[Time_Period_name] == data_point[Time_Period_name]) &
+        (existing_data[Number_of_Periods_name] == data_point[Number_of_Periods_name]) &
+        (existing_data[Number_of_Steps_name] == data_point[Number_of_Steps_name]) &
+        (existing_data[States_name] == data_point[States_name]) &
+        (existing_data[Thermal_E_name] == data_point[Thermal_E_name]) &
+        (existing_data[Leak_name] == data_point[Leak_name]) &
+        (existing_data[Super_Con_name] == data_point[Super_Con_name])
+     ]
+    return point_locations
+
+
+def non_existing_points(data_points, existing_data):
+    points_to_calc = list(data_points)
+    for points in data_points:
+        number_of_repeat_points = data_query(points, existing_data)
+        if len(number_of_repeat_points) == 0:
+            pass
+        elif len(number_of_repeat_points) == 1:
+            points_to_calc.remove(points)
+        else:
+            print('point has mulitple values, please check:%s')
+            for x in points:
+                print(x + ':' + str(points[x]))
+            quit()
+    return points_to_calc
+
+
+def calculate_points(points_to_calc, data_file, file_key, existing_data,number_of_cores=(mp.cpu_count()-2)):
+    if len(points_to_calc) != 0:
+        with mp.Manager() as manager:
+            point = 0
+            while point < len(points_to_calc):
+                calculated_points = manager.list()
+                processes = []
+                for i in xrange(number_of_cores):
+                    try:
+                        p = mp.Process(target=current_point, args=(points_to_calc[point],calculated_points))
+                        p.start()
+                        processes.append(p)
+                        point += 1
+                        print point ,'/',len(points_to_calc)
+                    except:
+                        pass
+
+                for process in processes:
+                    process.join()
+
+                for points in calculated_points:
+                    existing_data = existing_data.append(points, ignore_index=True)
+
+                existing_data.to_hdf(data_file, key=file_key, mode='w')
+    else:
+        print('points exist for this line')
+
+
 def current_point(point, calculated_points):
     su.thermal_energy = point[Thermal_E_name]
     su.thermal_energy = point[Thermal_E_name]
