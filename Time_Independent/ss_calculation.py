@@ -7,8 +7,8 @@ import copy
 Gate_name = 'Gate_(e)'
 Bias_name = 'Bias_(eV)'
 States_name = 'States Set'
-Thermal_E_name = 'Thermal_Energy_(\Delta)'
-Leak_name = 'Leakage_(\Delta)'
+Thermal_E_name = 'Thermal_Energy_(Delta)'
+Leak_name = 'Leakage_(Delta)'
 Super_Con_name = 'Superconducting'
 Current_name = 'Current'
 
