@@ -1,6 +1,7 @@
 import scipy as sp
 import scipy.integrate as int
 from scipy import signal
+from math import floor,log10
 
 # gate charge is measured in charge as a multiple of e
 # bias potential is measured in delta
@@ -37,10 +38,7 @@ def dos_SIN(e):
         )
     )
 
-dos = dos_NIN
-def check_sup():
-    if super_conductor:
-        dos = dos_SIN
+
 
 def potential_diff_1p(gate_charge, bias_potent, extra_electrons):
     return (+2. * unit_charge_energy * (extra_electrons + gate_charge + 0.5)) - (bias_potent / 2.)
@@ -133,6 +131,24 @@ def tunnel_total(gate_charge, bias_potential, extra_electrons):
 def tunnel_flow_j1(gate_charge, bias_potential, extra_electrons):
     out = tunnel_rate_1p(gate_charge, bias_potential, extra_electrons) \
           - tunnel_rate_1n(gate_charge, bias_potential, extra_electrons)
+    return out
+
+#-----------------------------------------------------------------------------------------------------------------------
+
+def round_sig(x, sig=7):
+    return round(x, sig-int(floor(log10(abs(x))))-1)
+
+
+def round_array_sig(x,sig=7):
+    out = sp.array([])
+    for i in x:
+        out = sp.append(out,round_sig(i))
+    return out
+
+
+def rounded_linspace(start,end,steps,sig=7):
+    array = sp.linspace(start,end,steps)
+    out = round_array_sig(array,sig)
     return out
 
 #-----------------------------------------------------------------------------------------------------------------------
