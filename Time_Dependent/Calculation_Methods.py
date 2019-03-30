@@ -1,11 +1,8 @@
 import scipy as sp
 import scipy.linalg as la
-import matplotlib.pyplot as plt
 import setup_file as su
 import multiprocessing as mp
-import math
 import pandas as pd
-import time
 import copy
 
 # print hasattr(b,"__len__")
