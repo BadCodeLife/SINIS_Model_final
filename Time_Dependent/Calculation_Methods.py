@@ -9,6 +9,7 @@ import copy
 
 Gate_Amp_name = 'Gate_Amplitude_(e)'  # Amplitude of gate charge
 Gate_Func_name = 'Gate_Function'  # Function of gate charge change
+Gate_Occ_Cent_name = 'Gate_Oscillation_Center_(e)'
 Bias_Func_name = 'Bias_Function'  # function of how bias varies with time
 Time_Period_name = 'Period_of_Oscillation_(RC)'  # period of oscillation for a single cycle of the transistor
 Number_of_Periods_name = 'Number_of_Periods'  # number of periods of oscillation that are being calculated
@@ -16,17 +17,19 @@ Number_of_Steps_name = 'Number_of_Time_Steps'  # number of steps all the periods
 States_name = 'States Set'
 Thermal_E_name = 'Thermal_Energy_(Delta)'
 Leak_name = 'Leakage_(Delta)'
+Charge_E_name = 'Charging_Energy_(Delta)'  # charging energy of the island
 Super_Con_name = 'Superconducting'
 Current_name = 'Current'
 
 
 # Method that makes a more formal definition of what the expected dictionary for a data point should be.
 # This is an incomplete DataPoint as it does not include the expectation value of current 'Current'
-def create_data_point_dict_steady(gate_amp, gate_func, bias_variance, bias_function, period, number_of_periods,
-                                  time_steps, n_set, temp, leak, super):
+def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, period, number_of_periods,
+                           time_steps, n_set, temp, leak, charge_energy, super):
     dictionary = {
         Gate_Amp_name: gate_amp,
         Gate_Func_name: gate_func,
+        Gate_Occ_Cent_name: gate_occ_cent,
         Bias_Func_name: bias_function,
         Time_Period_name: period,
         Number_of_Periods_name: number_of_periods,
@@ -34,6 +37,7 @@ def create_data_point_dict_steady(gate_amp, gate_func, bias_variance, bias_funct
         States_name: n_set,
         Thermal_E_name: temp,
         Leak_name: leak,
+        Charge_E_name: charge_energy,
         Super_Con_name: super
     }
     return dictionary
@@ -116,7 +120,7 @@ def expand_probability(p):
 
 def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_periods):
     dim = len(n_set)
-    U = exponentiate(gate_amp, gate_func,bias_func, n_set, time_array)
+    U = exponentiate(gate_amp, gate_func, bias_func, n_set, time_array)
     probability = probability_calculation(U, n_set)
     p_tilde = expand_probability(probability)
     tunneling_vec = U[dim]
@@ -127,11 +131,11 @@ def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_pe
 
 ########################################################################################################################
 
-def fetch_data(data_file,file_key):
+def fetch_data(data_file, file_key):
     try:
-        fetched_data = pd.DataFrame(pd.read_hdf(data_file,file_key,mode='r'))
+        fetched_data = pd.DataFrame(pd.read_hdf(data_file, file_key, mode='r'))
     except:
-        fetched_data = pd.DataFrame(columns={Gate_Amp_name,Gate_Func_name, Bias_Func_name,
+        fetched_data = pd.DataFrame(columns={Gate_Amp_name, Gate_Func_name, Gate_Occ_Cent_name, Bias_Func_name,
                                              Time_Period_name, Number_of_Periods_name, Number_of_Steps_name,
                                              States_name, Thermal_E_name, Leak_name, Super_Con_name, Current_name})
     return fetched_data
@@ -140,16 +144,18 @@ def fetch_data(data_file,file_key):
 def data_query(data_point, existing_data):
     point_locations = existing_data[
         (existing_data[Gate_Amp_name] == data_point[Gate_Amp_name]) &
-        (existing_data[Gate_Func_name] == data_point[Gate_Func_name]) &
-        (existing_data[Bias_Func_name] == data_point[Bias_Func_name]) &
+        (existing_data[Gate_Func_name] == data_point[Gate_Func_name].__name__) &
+        (existing_data[Gate_Occ_Cent_name] == data_point[Gate_Occ_Cent_name]) &
+        (existing_data[Bias_Func_name] == data_point[Bias_Func_name].__name__) &
         (existing_data[Time_Period_name] == data_point[Time_Period_name]) &
         (existing_data[Number_of_Periods_name] == data_point[Number_of_Periods_name]) &
         (existing_data[Number_of_Steps_name] == data_point[Number_of_Steps_name]) &
         (existing_data[States_name] == data_point[States_name]) &
         (existing_data[Thermal_E_name] == data_point[Thermal_E_name]) &
         (existing_data[Leak_name] == data_point[Leak_name]) &
+        (existing_data[Charge_E_name] == data_point[Charge_E_name]) &
         (existing_data[Super_Con_name] == data_point[Super_Con_name])
-     ]
+        ]
     return point_locations
 
 
@@ -169,7 +175,7 @@ def non_existing_points(data_points, existing_data):
     return points_to_calc
 
 
-def calculate_points(points_to_calc, data_file, file_key, existing_data,number_of_cores=(mp.cpu_count()-2)):
+def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 2)):
     if len(points_to_calc) != 0:
         with mp.Manager() as manager:
             point = 0
@@ -178,11 +184,11 @@ def calculate_points(points_to_calc, data_file, file_key, existing_data,number_o
                 processes = []
                 for i in xrange(number_of_cores):
                     try:
-                        p = mp.Process(target=current_point, args=(points_to_calc[point],calculated_points))
+                        p = mp.Process(target=current_point, args=(points_to_calc[point], calculated_points))
                         p.start()
                         processes.append(p)
                         point += 1
-                        print point ,'/',len(points_to_calc)
+                        print point, '/', len(points_to_calc)
                     except:
                         pass
 
@@ -202,6 +208,10 @@ def current_point(point, calculated_points):
     su.thermal_energy = point[Thermal_E_name]
     su.leakage = point[Leak_name]
     su.super_conductor = point[Super_Con_name]
+    su.time_period = point[Time_Period_name]
+    su.frequency = 1 / su.time_period
+    su.gate_occ_center = point[Gate_Occ_Cent_name]
+    su.unit_charge_energy = point[Charge_E_name]
 
     time_array = time_array_calc(time_period=point[Time_Period_name],
                                  number_of_periods=point[Number_of_Periods_name],
@@ -214,8 +224,27 @@ def current_point(point, calculated_points):
                            time_array=time_array,
                            number_of_periods=point[Number_of_Periods_name])
 
-
     completed_point = copy.deepcopy(point)
     completed_point[Current_name] = current
 
     calculated_points.append(completed_point)
+
+
+colour_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
+                   '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5']
+
+
+def current_line_plot(line_data_set, existing_data, axis, colour, line_label):
+    Gate_amplitudes = line_data_set['gate_amps']
+    del line_data_set['gate_amps']
+
+    Current_list = []
+    for gate_amp in Gate_amplitudes:
+        line_data_set['Gate_Amp_(e)'] = gate_amp
+
+        data_point_index = data_query(line_data_set, existing_data)[0]
+
+        current = existing_data.at[data_point_index, 'Current_(ef)']
+        Current_list.append(current)
+
+    axis.plot(Gate_amplitudes, Current_list, '.-', label=line_label, color=colour_sequence[colour])
