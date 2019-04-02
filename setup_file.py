@@ -18,10 +18,11 @@ int_limit_high = sp.inf
 
 frequency = 1.  # in units of 1/RC --- condition is that f<< 1/RC
 time_period = 1.  # in units of RC --- condition is that T>> RC
-gate_occ_center = 0.  # in no. of electorns of charge
-number_of_periods = 3
-total_time = time_period*number_of_periods
-steps_per_period = 200
+gate_occ_center = 0.  # in no. of electrons of charge
+number_of_periods = 3  # The code is designed to calculate the average current over n periods. 3 is the default
+total_time = time_period*number_of_periods  # Technically this is not needed. RC is the unit measurement of time,
+                                            # therefore current in ef only needs to be divided by number of periods.
+number_of_steps = 1200  # Number of timesteps the total calculation is split into
 
 
 
