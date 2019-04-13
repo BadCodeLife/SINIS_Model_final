@@ -1,4 +1,4 @@
-import ss_calculation as ss
+import Calculation_Methods_SS as ss
 import setup_file as su
 import scipy as sp
 import matplotlib.pyplot as plt

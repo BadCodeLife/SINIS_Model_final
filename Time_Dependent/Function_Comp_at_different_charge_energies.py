@@ -1,4 +1,4 @@
-import Calculation_Methods as cm
+import Calculation_Methods_RF as cm
 import setup_file as su
 import scipy as sp
 import matplotlib.pyplot as plt
