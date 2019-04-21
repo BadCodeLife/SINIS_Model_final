@@ -8,13 +8,13 @@ file = 'SteadyStateOut.h5'
 key = 'current'
 
 input = ss.create_datapoint_dict_steady(
-    gate=su.rounded_linspace(0, 0.5, 4),
+    gate=0,
     bias=su.rounded_linspace(-5, 5, 1001),
     n_spread=3,
-    temp=1e-7,
+    temp=[0.001, 0.04, 0.12, 0.16, 0.2],
     leak=1e-4,
     charge_energy=1,
-    super=True
+    super=False
 )
 
 # ss.check_tested_settings(file,key)
@@ -23,14 +23,14 @@ if __name__ == '__main__':
     Existing_Data = ss.fetch_data(file, key)
     # print (Existing_Data.to_string())
 
-    Gate = input[ss.Gate_name]
+    Temp = input[ss.Thermal_E_name]
     Bias = input[ss.Bias_name]
 
     desired_points = []
-    for gate in Gate:
+    for temp in Temp:
         for bias in Bias:
             data_point = copy.deepcopy(input)
-            data_point[ss.Gate_name] = gate
+            data_point[ss.Thermal_E_name] = temp
             data_point[ss.Bias_name] = bias
             desired_points.append(data_point)
 
@@ -43,13 +43,12 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1)
     colour = 0
-    for gate in Gate:
+    for temp in Temp:
         line_data_set = copy.deepcopy(input)
-        line_data_set[ss.Gate_name] = gate
-        line_label = '%s$\,$e' % gate
+        line_data_set[ss.Thermal_E_name] = temp
+        line_label = '%s$\,\Delta$' % temp
         ss.current_line_plot(line_data_set, Existing_Data, ax, colour, '-', line_label)
-        colour+=1
-
+        colour += 1
 
     type = None
     if input[ss.Super_Con_name]:
@@ -66,11 +65,8 @@ if __name__ == '__main__':
     plt.suptitle(Title)
     plt.rcParams.update({'font.size': 20})
     ax.tick_params(axis='both', which='major', labelsize=20)
-    ax.set_ylabel('Current [ef]', fontsize=20)  # Y label
+    ax.set_ylabel('Current [e]', fontsize=20)  # Y label
     ax.set_xlabel('Bias Voltage [eV/$\Delta$]', fontsize=20)  # X label
-    ax.legend(title='Gate Charge')
-
-
+    ax.legend(title='Thermal Energy')
 
     plt.show()
-

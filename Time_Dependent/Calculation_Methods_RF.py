@@ -3,6 +3,7 @@ import scipy.linalg as la
 import setup_file as su
 import multiprocessing as mp
 import pandas as pd
+import calculation as calc
 import copy
 
 # print hasattr(b,"__len__")
@@ -14,7 +15,7 @@ Bias_Func_name = 'Bias_Function'  # function of how bias varies with time
 Time_Period_name = 'Period_of_Oscillation_(RC)'  # period of oscillation for a single cycle of the transistor
 Number_of_Periods_name = 'Number_of_Periods'  # number of periods of oscillation that are being calculated
 Number_of_Steps_name = 'Number_of_Time_Steps'  # number of steps all the periods will be split into
-States_name = 'States Set'
+States_name = 'States Range'
 Thermal_E_name = 'Thermal_Energy_(Delta)'
 Leak_name = 'Leakage_(Delta)'
 Charge_E_name = 'Charging_Energy_(Delta)'  # charging energy of the island
@@ -25,7 +26,7 @@ Current_name = 'Current_(ef)'
 # Method that makes a more formal definition of what the expected dictionary for a data point should be.
 # This is an incomplete DataPoint as it does not include the expectation value of current 'Current'
 def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, period, number_of_periods,
-                           time_steps, n_set, temp, leak, charge_energy, super):
+                           time_steps, n_set, temp, leak, charge_energy, superconductor):
     dictionary = {
         Gate_Amp_name: gate_amp,
         Gate_Func_name: gate_func,
@@ -38,7 +39,7 @@ def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, pe
         Thermal_E_name: temp,
         Leak_name: leak,
         Charge_E_name: charge_energy,
-        Super_Con_name: super
+        Super_Con_name: superconductor
     }
     return dictionary
 
@@ -137,7 +138,8 @@ def fetch_data(data_file, file_key):
     except:
         fetched_data = pd.DataFrame(columns={Gate_Amp_name, Gate_Func_name, Gate_Occ_Cent_name, Bias_Func_name,
                                              Time_Period_name, Number_of_Periods_name, Number_of_Steps_name,
-                                             States_name, Thermal_E_name, Leak_name, Super_Con_name, Current_name})
+                                             States_name, Thermal_E_name, Leak_name,Charge_E_name, Super_Con_name,
+                                             Current_name})
     return fetched_data
 
 
@@ -155,7 +157,7 @@ def data_query(data_point, existing_data):
         (existing_data[Leak_name] == data_point[Leak_name]) &
         (existing_data[Charge_E_name] == data_point[Charge_E_name]) &
         (existing_data[Super_Con_name] == data_point[Super_Con_name])
-        ]
+        ].index
     return point_locations
 
 
@@ -204,27 +206,34 @@ def calculate_points(points_to_calc, data_file, file_key, existing_data, number_
 
 
 def current_point(point, calculated_points):
-    su.thermal_energy = point[Thermal_E_name]
+    su.super_conductor = point[Super_Con_name]
+
+    su.gate_occ_center = point[Gate_Occ_Cent_name]
     su.thermal_energy = point[Thermal_E_name]
     su.leakage = point[Leak_name]
-    su.super_conductor = point[Super_Con_name]
+
+    su.unit_charge_energy = point[Charge_E_name]
     su.time_period = point[Time_Period_name]
     su.frequency = 1 / su.time_period
-    su.gate_occ_center = point[Gate_Occ_Cent_name]
-    su.unit_charge_energy = point[Charge_E_name]
+
+
+    n_set = sp.arange(-point[States_name]-1,point[States_name]+1)
+
 
     time_array = time_array_calc(time_period=point[Time_Period_name],
                                  number_of_periods=point[Number_of_Periods_name],
                                  number_of_steps=point[Number_of_Steps_name])
 
-    current = current_calc(gate_amp=point[Gate_Amp_name],
-                           gate_func=point[Gate_Func_name],
-                           bias_func=point[Bias_Func_name],
-                           n_set=point[States_name],
-                           time_array=time_array,
-                           number_of_periods=point[Number_of_Periods_name])
+    current =  current_calc(gate_amp=point[Gate_Amp_name],
+                            gate_func=point[Gate_Func_name],
+                            bias_func=point[Bias_Func_name],
+                            n_set=n_set,
+                            time_array=time_array,
+                            number_of_periods=point[Number_of_Periods_name])
 
     completed_point = copy.deepcopy(point)
+    completed_point[Gate_Func_name]=completed_point[Gate_Func_name].__name__
+    completed_point[Bias_Func_name]=completed_point[Bias_Func_name].__name__
     completed_point[Current_name] = current
 
     calculated_points.append(completed_point)
@@ -240,9 +249,10 @@ def current_line_plot(line_data_set, existing_data, axis, colour, line_label):
 
     Current_list = []
     for gate_amp in Gate_amplitudes:
-        line_data_set[Gate_Amp_name] = gate_amp
+        data_point = copy.deepcopy(line_data_set)
+        data_point[Gate_Amp_name] = gate_amp
 
-        data_point_index = data_query(line_data_set, existing_data)[0]
+        data_point_index = data_query(data_point, existing_data)[0]
 
         current = existing_data.at[data_point_index, 'Current_(ef)']
         Current_list.append(current)
@@ -262,4 +272,25 @@ def check_tested_settings(file,key):
 
     print(fetched_data.to_string())
 
+if __name__ == '__main__':
 
+    test = []
+
+    test_point = create_data_point_dict(
+        gate_amp=1.,
+        gate_func=su.gate_curve,
+        gate_occ_cent=0.5,
+        bias_function=su.bias_unitary,
+        period=1e-5,
+        number_of_periods=3,
+        time_steps=20,
+        n_set=4,
+        temp=1e-2,
+        leak=1e-4,
+        charge_energy=1.,
+        superconductor=True
+    )
+
+    current_point(test_point,test)
+    for item in test[0]:
+        print '%s:\t%s'%(item, test[0][item])

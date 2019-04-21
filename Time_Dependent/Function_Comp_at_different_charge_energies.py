@@ -20,7 +20,7 @@ input = cm.create_data_point_dict(
     temp=1e-2,
     leak=1e-4,
     charge_energy=[1.,3.],
-    super=True
+    superconductor=True
 )
 
 if __name__=="__main__":
