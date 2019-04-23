@@ -6,8 +6,7 @@ from math import floor,log10
 # gate charge is measured in charge as a multiple of e
 # bias potential is measured in delta
 energy_gap = 1.  # normalised by itself
-total_capacitance = 0.5  # in units of e^2/energy_gap
-unit_charge_energy = 1.  # in units of energy_gap
+unit_charge_energy = 1.  # in units of energy_gap and \propto 1/Csum   || due to normalisations: Ec =  1/Csum
 tunnel_resistance = 1.  # normalised by itself
 thermal_energy = 1e-2  # in units of energy_gap => temp = energy_gap/boltzman_const.
 leakage = 1e-4  # in units of energy_gap

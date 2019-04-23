@@ -50,7 +50,11 @@ def test_dataframes():
 def basic_test():
     print '%s %s'%(1,2)
 
-basic_test()
 
+def test_energy():
+    e = sp.linspace(-2,2,1001)
+    doe = su.dos_SIN
+    plt.plot(e,doe(e))
+    plt.show()
 
 

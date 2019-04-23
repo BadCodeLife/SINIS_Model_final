@@ -46,10 +46,10 @@ def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, pe
 
 # Method that creates the array of times used for this calculation.
 # This is under the assumption that for N steps, you want to use t_0 -> t_N-1
-def time_array_calc(time_period, number_of_periods, number_of_steps):
-    end_time = time_period * number_of_periods
-    time_array = su.rounded_linspace(0, end_time, number_of_steps)
-    time_array = time_array[:number_of_steps + 1]
+def time_array_calc(charge_energy,time_period, number_of_periods, number_of_steps):
+    end_time = charge_energy * time_period * number_of_periods
+    time_array = su.rounded_linspace(0, end_time, number_of_steps+1)
+    time_array = time_array[:number_of_steps]
     return time_array
 
 
@@ -86,7 +86,7 @@ def expand_matrix(gate, bias, n_set):
     return A
 
 
-def exponentiate(gate_amp, gate_function, bias_func, n_set, time_array):
+def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
     time_step = time_array[1]
     U = None
     for time in time_array:
@@ -105,6 +105,9 @@ def exponentiate(gate_amp, gate_function, bias_func, n_set, time_array):
 def probability_calculation(U, n_set):
     dim = len(n_set)
     u = U[:dim, :dim]
+    # print sp.shape(u)
+    # print sp.shape(U)
+    # quit()
 
     i = sp.identity(dim)
     m = sp.subtract(u, i)
@@ -121,10 +124,14 @@ def expand_probability(p):
 
 def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_periods):
     dim = len(n_set)
-    U = exponentiate(gate_amp, gate_func, bias_func, n_set, time_array)
+    U = exponential_matrix(gate_amp, gate_func, bias_func, n_set, time_array)
     probability = probability_calculation(U, n_set)
     p_tilde = expand_probability(probability)
     tunneling_vec = U[dim]
+    # for i in xrange(dim):
+    #     print n_set[i], p_tilde[i], tunneling_vec[i]
+    # print p_tilde[dim],tunneling_vec[dim]
+    # quit()
     current = sp.dot(tunneling_vec, p_tilde)
 
     return current / number_of_periods
@@ -177,7 +184,7 @@ def non_existing_points(data_points, existing_data):
     return points_to_calc
 
 
-def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 2)):
+def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 1)):
     if len(points_to_calc) != 0:
         with mp.Manager() as manager:
             point = 0
@@ -220,7 +227,8 @@ def current_point(point, calculated_points):
     n_set = sp.arange(-point[States_name]-1,point[States_name]+1)
 
 
-    time_array = time_array_calc(time_period=point[Time_Period_name],
+    time_array = time_array_calc(charge_energy=point[Charge_E_name],
+                                 time_period=point[Time_Period_name],
                                  number_of_periods=point[Number_of_Periods_name],
                                  number_of_steps=point[Number_of_Steps_name])
 
@@ -243,7 +251,7 @@ colour_sequence = ['#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c',
                    '#98df8a', '#d62728', '#ff9896', '#9467bd', '#c5b0d5']
 
 # This method will print a line of the plot. the line is going to be with the gate amplitude as the x-axis
-def current_line_plot(line_data_set, existing_data, axis, colour, line_label):
+def current_line_plot(line_data_set, existing_data, axis, colour, line_type,line_label):
     Gate_amplitudes = line_data_set[Gate_Amp_name]
     del line_data_set[Gate_Amp_name]
 
@@ -257,7 +265,7 @@ def current_line_plot(line_data_set, existing_data, axis, colour, line_label):
         current = existing_data.at[data_point_index, 'Current_(ef)']
         Current_list.append(current)
 
-    axis.plot(Gate_amplitudes, Current_list, '.-', label=line_label, color=colour_sequence[colour])
+    axis.plot(Gate_amplitudes, Current_list, line_type, label=line_label, color=colour_sequence[colour])
 
 
 # This method will print a table with all the settings that have been tested and are inside the datafile
@@ -274,23 +282,34 @@ def check_tested_settings(file,key):
 
 if __name__ == '__main__':
 
-    test = []
+    # test = []
+    #
+    # test_point = create_data_point_dict(
+    #     gate_amp=1.,
+    #     gate_func=su.gate_curve,
+    #     gate_occ_cent=0.5,
+    #     bias_function=su.bias_unitary,
+    #     period=1e-5,
+    #     number_of_periods=1,
+    #     time_steps=1400,
+    #     n_set=3,
+    #     temp=1e-2,
+    #     leak=1e-4,
+    #     charge_energy=1.,
+    #     superconductor=True
+    # )
+    #
+    # current_point(test_point,test)
+    # for item in test[0]:
+    #     print '%s:\t%s'%(item, test[0][item])
 
-    test_point = create_data_point_dict(
-        gate_amp=1.,
-        gate_func=su.gate_curve,
-        gate_occ_cent=0.5,
-        bias_function=su.bias_unitary,
-        period=1e-5,
-        number_of_periods=3,
-        time_steps=20,
-        n_set=4,
-        temp=1e-2,
-        leak=1e-4,
-        charge_energy=1.,
-        superconductor=True
-    )
+    t = sp.linspace(0, 1, 21)
+    n = sp.arange(-3, 2)
+    dim = len(n)
+    U = exponential_matrix(1, su.gate_curve, su.bias_unitary, n, t[:20])
 
-    current_point(test_point,test)
-    for item in test[0]:
-        print '%s:\t%s'%(item, test[0][item])
+    p = probability_calculation(U, n)
+    p = expand_probability(p)
+    tun = U[dim]
+    c = sp.dot(p, tun)
+    print c
