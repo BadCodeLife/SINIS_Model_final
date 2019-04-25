@@ -3,7 +3,6 @@ import scipy.linalg as la
 import setup_file as su
 import multiprocessing as mp
 import pandas as pd
-import calculation as calc
 import copy
 
 # print hasattr(b,"__len__")
@@ -46,8 +45,8 @@ def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, pe
 
 # Method that creates the array of times used for this calculation.
 # This is under the assumption that for N steps, you want to use t_0 -> t_N-1
-def time_array_calc(charge_energy,time_period, number_of_periods, number_of_steps):
-    end_time = charge_energy * time_period * number_of_periods
+def time_array_calc(charging_energy, time_period, number_of_periods, number_of_steps):
+    end_time = time_period * number_of_periods * charging_energy
     time_array = su.rounded_linspace(0, end_time, number_of_steps+1)
     time_array = time_array[:number_of_steps]
     return time_array
@@ -93,7 +92,7 @@ def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
         gate = gate_function(gate_amp, time)
         bias = sp.float64(bias_func(time))
 
-        A = time_step * expand_matrix(gate, bias, n_set)
+        A = time_step * make_expanded_diff_matrix(gate, bias, n_set)
         segment = la.expm(A)
         if U is None:
             U = segment
@@ -105,9 +104,6 @@ def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
 def probability_calculation(U, n_set):
     dim = len(n_set)
     u = U[:dim, :dim]
-    # print sp.shape(u)
-    # print sp.shape(U)
-    # quit()
 
     i = sp.identity(dim)
     m = sp.subtract(u, i)
@@ -128,14 +124,60 @@ def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_pe
     probability = probability_calculation(U, n_set)
     p_tilde = expand_probability(probability)
     tunneling_vec = U[dim]
-    # for i in xrange(dim):
-    #     print n_set[i], p_tilde[i], tunneling_vec[i]
-    # print p_tilde[dim],tunneling_vec[dim]
-    # quit()
     current = sp.dot(tunneling_vec, p_tilde)
 
     return current / number_of_periods
 
+
+# will find all tunnel events possible for a n_g, V combination for the states in n_set
+# output array is two dimensional, with [n][1+,1-,2+,2-] as the locations
+def tunnel_array(gate, bias, n_set):
+    output_array = sp.array([])
+    for n in n_set:
+        tunnel_events = sp.array([[su.tunnel_rate_1p(gate, bias, n),
+                                   su.tunnel_rate_1n(gate, bias, n),
+                                   su.tunnel_rate_2p(gate, bias, n),
+                                   su.tunnel_rate_2n(gate, bias, n)]])
+        if not output_array.any():
+            output_array = tunnel_events
+        else:
+            output_array = sp.concatenate((output_array, tunnel_events), axis=0)
+    return output_array
+
+
+def make_diff_matrix(t_array):
+    dim = len(t_array)
+    matrix = sp.zeros((dim, dim))
+    for i in xrange(dim):
+        matrix[i, i] = -(t_array[i, 0] + t_array[i, 1] + t_array[i, 2] + t_array[i, 3])
+        if i < dim - 1:
+            matrix[i, i + 1] = t_array[i + 1, 1] + t_array[i + 1, 3]
+        if i > 0:
+            matrix[i, i - 1] = t_array[i - 1, 0] + t_array[i - 1, 2]
+    return matrix
+
+
+def make_tunnel_vec_v2(t_array):
+    dim = len(t_array)
+    out = sp.array([])
+    for i in xrange(dim):
+        tunnel_current = t_array[i, 0] - t_array[i, 1]
+        out = sp.append(out,tunnel_current)
+    return out
+
+
+def make_expanded_diff_matrix(gate, bias, n_set):
+    dim = len(n_set)
+    t_array = tunnel_array(gate, bias, n_set)
+
+    diff_mat = make_diff_matrix(t_array)
+    tunnel_vec = make_tunnel_vec_v2(t_array).reshape((1, dim))
+    zeros = sp.zeros((dim + 1, 1))
+
+    A = sp.concatenate((diff_mat, tunnel_vec), axis=0)
+    A = sp.concatenate((A, zeros), axis=1)
+
+    return A
 
 ########################################################################################################################
 
@@ -184,7 +226,7 @@ def non_existing_points(data_points, existing_data):
     return points_to_calc
 
 
-def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 1)):
+def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 2)):
     if len(points_to_calc) != 0:
         with mp.Manager() as manager:
             point = 0
@@ -220,14 +262,14 @@ def current_point(point, calculated_points):
     su.leakage = point[Leak_name]
 
     su.unit_charge_energy = point[Charge_E_name]
-    su.time_period = point[Time_Period_name]
+    su.time_period = point[Time_Period_name] * point[Charge_E_name]
     su.frequency = 1 / su.time_period
 
 
     n_set = sp.arange(-point[States_name]-1,point[States_name]+1)
 
 
-    time_array = time_array_calc(charge_energy=point[Charge_E_name],
+    time_array = time_array_calc(charging_energy=point[Charge_E_name],
                                  time_period=point[Time_Period_name],
                                  number_of_periods=point[Number_of_Periods_name],
                                  number_of_steps=point[Number_of_Steps_name])

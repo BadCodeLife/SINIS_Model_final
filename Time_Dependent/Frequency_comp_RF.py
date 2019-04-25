@@ -11,13 +11,13 @@ Log = False
 input = cm.create_data_point_dict(
     gate_amp=su.rounded_linspace(0., 1.3, 131),
     gate_func=su.gate_curve,
-    gate_occ_cent=-0.,
+    gate_occ_cent=-0.5,
     bias_function=su.bias_curve_000,
-    period=1e5,
+    period=[1e5, 1e4, 1e3, 1e2, 1e1],
     number_of_periods=1,
-    time_steps=70,
+    time_steps=130,
     n_set=3,
-    temp=[0.001,0.01,0.1],
+    temp=0.01,
     leak=1e-10,
     charge_energy=1.,
     superconductor=True
@@ -26,14 +26,14 @@ if __name__ == '__main__':
     Existing_Data = cm.fetch_data(file, key)
 
     Gate_Amplitudes = input[cm.Gate_Amp_name]
-    Temp = input[cm.Thermal_E_name]
+    Period = input[cm.Time_Period_name]
 
     desired_points = []
-    for temp in Temp:
+    for period in Period:
         for gate_amp in Gate_Amplitudes:
             data_point = copy.deepcopy(input)
             data_point[cm.Gate_Amp_name] = gate_amp
-            data_point[cm.Thermal_E_name] = temp
+            data_point[cm.Time_Period_name] = period
             desired_points.append(data_point)
 
     points_to_calc = cm.non_existing_points(desired_points, Existing_Data)
@@ -45,10 +45,10 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1)
     colour = 0
-    for temp in Temp:
+    for period in Period:
         line_data_set = copy.deepcopy(input)
-        line_data_set[cm.Thermal_E_name] = temp
-        line_label = '%s$\,\Delta$' % temp
+        line_data_set[cm.Time_Period_name] = period
+        line_label = '%s$\,$RC' % period
         cm.current_line_plot(line_data_set, Existing_Data, ax, colour, '.-', line_label)
         colour += 1
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     else:
         type = 'NININ'
 
-    n_high = input[cm.States_name]+1
+    n_high = input[cm.States_name] + 1
     n_low = -input[cm.States_name]
 
     if Log:
@@ -67,11 +67,11 @@ if __name__ == '__main__':
 
     Title = 'Basic 2 Variable plot for a %s transistor \n' % type \
             + 'Gate Function = %s, ' % input[cm.Gate_Func_name].__name__ \
-            + 'Gate Oscillation center = %s e, '%input[cm.Gate_Occ_Cent_name] \
+            + 'Gate Oscillation center = %s e, ' % input[cm.Gate_Occ_Cent_name] \
             + 'Bias Function = %s, ' % input[cm.Bias_Func_name].__name__ \
             + 'Charging Energy = %s $\Delta$, ' % input[cm.Charge_E_name] \
+            + 'Thermal Energy = %s $\Delta$, ' % input[cm.Thermal_E_name] \
             + 'Leakage = %s $\Delta$, \n' % input[cm.Leak_name] \
-            + 'Time Period = %s RC, ' % input[cm.Time_Period_name] \
             + 'Number of Periods = %s, ' % input[cm.Number_of_Periods_name] \
             + 'Number of Time Steps = %s, ' % input[cm.Number_of_Steps_name] \
             + 'States considered are from n=%s to %s' % (n_low, n_high)
@@ -81,7 +81,7 @@ if __name__ == '__main__':
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel('Current [ef]', fontsize=20)  # Y label
     ax.set_xlabel('Gate Charge Amplitude [e]', fontsize=20)  # X label
-    ax.legend(title='Thermal Energy')
+    ax.legend(title='Time Period')
     plt.show()
 
     print Title

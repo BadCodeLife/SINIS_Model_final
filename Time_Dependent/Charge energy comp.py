@@ -1,6 +1,5 @@
 import Calculation_Methods_RF as cm
 import setup_file as su
-import scipy as sp
 import matplotlib.pyplot as plt
 import copy
 
@@ -11,29 +10,29 @@ Log = False
 input = cm.create_data_point_dict(
     gate_amp=su.rounded_linspace(0., 1.3, 131),
     gate_func=su.gate_curve,
-    gate_occ_cent=-0.,
-    bias_function=su.bias_curve_000,
+    gate_occ_cent=-0.5,
+    bias_function=su.bias_unitary,
     period=1e5,
     number_of_periods=1,
     time_steps=70,
     n_set=3,
-    temp=[0.001,0.01,0.1],
+    temp=1e-2,
     leak=1e-10,
-    charge_energy=1.,
+    charge_energy=[1,2,3],
     superconductor=True
 )
 if __name__ == '__main__':
     Existing_Data = cm.fetch_data(file, key)
 
     Gate_Amplitudes = input[cm.Gate_Amp_name]
-    Temp = input[cm.Thermal_E_name]
+    C_Energies = input[cm.Charge_E_name]
 
     desired_points = []
-    for temp in Temp:
+    for energy in C_Energies:
         for gate_amp in Gate_Amplitudes:
             data_point = copy.deepcopy(input)
             data_point[cm.Gate_Amp_name] = gate_amp
-            data_point[cm.Thermal_E_name] = temp
+            data_point[cm.Charge_E_name] = energy
             desired_points.append(data_point)
 
     points_to_calc = cm.non_existing_points(desired_points, Existing_Data)
@@ -45,10 +44,10 @@ if __name__ == '__main__':
 
     fig, ax = plt.subplots(1)
     colour = 0
-    for temp in Temp:
+    for energy in C_Energies:
         line_data_set = copy.deepcopy(input)
-        line_data_set[cm.Thermal_E_name] = temp
-        line_label = '%s$\,\Delta$' % temp
+        line_data_set[cm.Charge_E_name] = energy
+        line_label = '%s$\,\Delta$' % energy
         cm.current_line_plot(line_data_set, Existing_Data, ax, colour, '.-', line_label)
         colour += 1
 
@@ -69,7 +68,7 @@ if __name__ == '__main__':
             + 'Gate Function = %s, ' % input[cm.Gate_Func_name].__name__ \
             + 'Gate Oscillation center = %s e, '%input[cm.Gate_Occ_Cent_name] \
             + 'Bias Function = %s, ' % input[cm.Bias_Func_name].__name__ \
-            + 'Charging Energy = %s $\Delta$, ' % input[cm.Charge_E_name] \
+            + 'Thermal Energy = %s $\Delta$, ' % input[cm.Thermal_E_name] \
             + 'Leakage = %s $\Delta$, \n' % input[cm.Leak_name] \
             + 'Time Period = %s RC, ' % input[cm.Time_Period_name] \
             + 'Number of Periods = %s, ' % input[cm.Number_of_Periods_name] \
@@ -81,7 +80,7 @@ if __name__ == '__main__':
     ax.tick_params(axis='both', which='major', labelsize=20)
     ax.set_ylabel('Current [ef]', fontsize=20)  # Y label
     ax.set_xlabel('Gate Charge Amplitude [e]', fontsize=20)  # X label
-    ax.legend(title='Thermal Energy')
+    ax.legend(title='Charging Energy')
     plt.show()
 
     print Title
