@@ -17,7 +17,6 @@ input = ss.create_datapoint_dict_steady(
     super=True
 )
 
-# ss.check_tested_settings(file,key)
 
 if __name__ == '__main__':
     Existing_Data = ss.fetch_data(file, key)
