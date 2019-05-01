@@ -9,13 +9,13 @@ file = 'SteadyStateOut.h5'
 key = 'current'
 
 input = ss.create_datapoint_dict_steady(
-    gate=su.rounded_linspace(-1, 1, 33),
-    bias=su.rounded_linspace(-5, 5, 161),
+    gate=su.rounded_linspace(-5, 5, 201),
+    bias=su.rounded_linspace(-5, 5, 201),
     n_spread=3,
     temp=1e-2,
     leak=1e-4,
     charge_energy=1,
-    super=True
+    super=False
 )
 
 
@@ -34,12 +34,13 @@ def Get_Data(input, existing_data):
             data_point[ss.Bias_name] = bias
             try:
                 data_point_index = ss.data_query(data_point, existing_data)[0]
+                current = existing_data.at[data_point_index, ss.Current_name]
+                z = sp.append(z, current)
             except:
                 print ss.data_query(data_point, existing_data)
                 print data_point
                 quit()
-            current = existing_data.at[data_point_index, ss.Current_name]
-            z = sp.append(z, current)
+
         try:
             Z = sp.vstack((Z, z))
         except:
@@ -51,8 +52,13 @@ def Get_Data(input, existing_data):
 def Wire_Plot(Bias, Gate, Current):
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-
+    plt.rcParams.update({'font.size': 20})
+    ax.tick_params(axis='both', which='major', labelsize=20)
     ax.plot_wireframe(Bias, Gate, Current)
+    ax.set_ylabel('Gate Charge ($n_g$)', fontsize=20, labelpad=20)  # Y label
+    ax.set_xlabel('Bias ($\Delta$/e)', fontsize=20, labelpad=20)  # X label
+    ax.set_zlabel('Current/($\Delta$/eR)', fontsize=20, labelpad=20) # Z label
+    ax.tick_params(pad=8)
     plt.show()
 
 

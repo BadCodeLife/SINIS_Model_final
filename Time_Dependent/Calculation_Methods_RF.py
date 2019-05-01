@@ -46,7 +46,7 @@ def create_data_point_dict(gate_amp, gate_func, gate_occ_cent, bias_function, pe
 # Method that creates the array of times used for this calculation.
 # This is under the assumption that for N steps, you want to use t_0 -> t_N-1
 def time_array_calc(charging_energy, time_period, number_of_periods, number_of_steps):
-    end_time = time_period * number_of_periods * charging_energy
+    end_time = time_period * number_of_periods / charging_energy
     time_array = su.rounded_linspace(0, end_time, number_of_steps+1)
     time_array = time_array[:number_of_steps]
     return time_array
@@ -262,7 +262,7 @@ def current_point(point, calculated_points):
     su.leakage = point[Leak_name]
 
     su.unit_charge_energy = point[Charge_E_name]
-    su.time_period = point[Time_Period_name] * point[Charge_E_name]
+    su.time_period = point[Time_Period_name] / point[Charge_E_name]
     su.frequency = 1 / su.time_period
 
 

@@ -9,14 +9,14 @@ key = 'current'
 Log = False
 
 input = cm.create_data_point_dict(
-    gate_amp=su.rounded_linspace(0.1, 0.5, 41 ),
+    gate_amp=su.rounded_linspace(0.0, 1.3, 66),
     gate_func=su.gate_curve,
     gate_occ_cent=-0.5,
     bias_function=su.bias_unitary,
     period=1e6,
     number_of_periods=1,
     time_steps=150,
-    n_set=3,
+    n_set=2,
     temp=1e-2,
     leak=1e-10,
     charge_energy=1.,
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     colour = 0
     line_data_set = copy.deepcopy(input)
     line_label = None
-    cm.current_line_plot(line_data_set, Existing_Data, ax, colour, line_label)
+    cm.current_line_plot(line_data_set, Existing_Data, ax, colour,'.-',line_label)
 
     type = None
     if super:

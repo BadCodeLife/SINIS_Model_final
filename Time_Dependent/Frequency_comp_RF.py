@@ -15,11 +15,11 @@ input = cm.create_data_point_dict(
     bias_function=su.bias_curve_000,
     period=[1e5, 1e4, 1e3, 1e2, 1e1],
     number_of_periods=1,
-    time_steps=130,
+    time_steps=190,
     n_set=3,
-    temp=0.01,
-    leak=1e-10,
-    charge_energy=1.,
+    temp=1e-2,
+    leak=1e-4,
+    charge_energy=2.,
     superconductor=True
 )
 if __name__ == '__main__':
