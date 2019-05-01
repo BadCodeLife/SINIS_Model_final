@@ -14,7 +14,7 @@ input = ss.create_datapoint_dict_steady(
     temp=[0.003, 0.01, 0.1, 0.3,0.5, 1.],
     leak=1e-4,
     charge_energy=1,
-    super=False
+    super=True
 )
 
 # ss.check_tested_settings(file,key)

@@ -9,17 +9,17 @@ key = 'current'
 Log = False
 
 input = cm.create_data_point_dict(
-    gate_amp=su.rounded_linspace(0., 1.3, 131),
+    gate_amp=su.rounded_linspace(0., 1.3, 66),
     gate_func=su.gate_curve,
-    gate_occ_cent=-0.,
-    bias_function=su.bias_curve_000,
-    period=1e5,
+    gate_occ_cent=-0.5,
+    bias_function=su.bias_unitary,
+    period=1e3,
     number_of_periods=1,
-    time_steps=70,
-    n_set=3,
+    time_steps=60,
+    n_set=2,
     temp=[0.001,0.01,0.1],
-    leak=1e-10,
-    charge_energy=1.,
+    leak=1e-4,
+    charge_energy=2.,
     superconductor=True
 )
 if __name__ == '__main__':
@@ -62,8 +62,8 @@ if __name__ == '__main__':
     n_low = -input[cm.States_name]
 
     if Log:
-        ax[0].semilogy()
-        ax[0].set_ylim(0.9995, 1.0005)
+        ax.semilogy()
+        ax.set_ylim(0.9995, 1.0005)
 
     Title = 'Basic 2 Variable plot for a %s transistor \n' % type \
             + 'Gate Function = %s, ' % input[cm.Gate_Func_name].__name__ \
