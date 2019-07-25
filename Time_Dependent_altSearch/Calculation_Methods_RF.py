@@ -53,38 +53,6 @@ def time_array_calc(charging_energy, time_period, number_of_periods, number_of_s
 
 
 ########################################################################################################################
-
-def make_matrix(gate, bias, n_set):
-    dim = len(n_set)
-    matrix = sp.zeros((dim, dim))
-    for i in xrange(dim):
-        matrix[i, i] = -su.tunnel_total(gate, bias, n_set[i])
-        if i < dim - 1:
-            matrix[i, i + 1] = su.tunnel_off(gate, bias, n_set[i + 1])
-        if i > 0:
-            matrix[i, i - 1] = su.tunnel_on(gate, bias, n_set[i - 1])
-    return matrix
-
-
-def make_tunnel_vector(gate, bias, n_set):
-    dim = len(n_set)
-    out = sp.array([])
-    for i in xrange(dim):
-        out = sp.append(out, su.tunnel_flow_j1(gate, bias, n_set[i]))
-    return out
-
-
-def expand_matrix(gate, bias, n_set):
-    dim = len(n_set)
-    matrix = make_matrix(gate, bias, n_set)
-    vector = make_tunnel_vector(gate, bias, n_set).reshape((1, dim))
-    zeros = sp.zeros((dim + 1, 1))
-
-    A = sp.concatenate((matrix, vector), axis=0)
-    A = sp.concatenate((A, zeros), axis=1)
-    return A
-
-
 def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
     time_step = time_array[1]
     U = None
@@ -157,7 +125,7 @@ def make_diff_matrix(t_array):
     return matrix
 
 
-def make_tunnel_vec_v2(t_array):
+def make_tunnel_vec(t_array):
     dim = len(t_array)
     out = sp.array([])
     for i in xrange(dim):
@@ -171,7 +139,7 @@ def make_expanded_diff_matrix(gate, bias, n_set):
     t_array = tunnel_array(gate, bias, n_set)
 
     diff_mat = make_diff_matrix(t_array)
-    tunnel_vec = make_tunnel_vec_v2(t_array).reshape((1, dim))
+    tunnel_vec = make_tunnel_vec(t_array).reshape((1, dim))
     zeros = sp.zeros((dim + 1, 1))
 
     A = sp.concatenate((diff_mat, tunnel_vec), axis=0)
@@ -185,9 +153,18 @@ def data_location_extraction(data_points):
     for item in data_points:
         all_points.append(copy.deepcopy(item))
     for items in all_points:
-        items.delete(Gate_Amp_name)
-        items.delete(Current_name)
-    return 0
+        del items[Gate_Amp_name]
+        del items[Current_name]
+
+    seen = set()
+    unique_items = []
+    for items in all_points:
+        t = tuple(items.items())
+        if t not in seen:
+            seen.add(t)
+            unique_items.append(items)
+
+    return unique_items
 
 
 
@@ -337,35 +314,6 @@ def check_tested_settings(file,key):
     print(fetched_data.to_string())
 
 if __name__ == '__main__':
-
-    # test = []
-    #
-    # test_point = create_data_point_dict(
-    #     gate_amp=1.,
-    #     gate_func=su.gate_curve,
-    #     gate_occ_cent=0.5,
-    #     bias_function=su.bias_unitary,
-    #     period=1e-5,
-    #     number_of_periods=1,
-    #     time_steps=1400,
-    #     n_set=3,
-    #     temp=1e-2,
-    #     leak=1e-4,
-    #     charge_energy=1.,
-    #     superconductor=True
-    # )
-    #
-    # current_point(test_point,test)
-    # for item in test[0]:
-    #     print '%s:\t%s'%(item, test[0][item])
-
-    t = sp.linspace(0, 1, 21)
-    n = sp.arange(-3, 2)
-    dim = len(n)
-    U = exponential_matrix(1, su.gate_curve, su.bias_unitary, n, t[:20])
-
-    p = probability_calculation(U, n)
-    p = expand_probability(p)
-    tun = U[dim]
-    c = sp.dot(p, tun)
-    print c
+    data = [{Gate_Amp_name:1,Current_name:1,"something":2,"something2":4,"something3":4,"something4":4},
+            {Gate_Amp_name:1,Current_name:1,"something":2,"something2":4,"something3":4,"something4":4}]
+    print data_location_extraction(data)
