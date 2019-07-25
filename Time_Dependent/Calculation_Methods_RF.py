@@ -268,7 +268,10 @@ def non_existing_points(data_points, existing_data):
 # divides up the calculation of data points among cpu cores available. This leaves 2 cores unused. This is so the device
 # can still be used while the calculations are being preformed. If this isn't desired, number_of_cores can be used to
 # change the number of cores used during calculation.
-# once all the cores have done the one data point assigned to them, they will save the existing data file
+# once all the cores have done the one data point assigned to them, they will save the existing data file before moving
+# onto the next set of data points.
+# information of how many data points are left will be provided.
+# This is most likely not the most efficient method of preforming multiprocessing in this code.
 def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 2)):
     if len(points_to_calc) != 0:
         with mp.Manager() as manager:
@@ -296,7 +299,8 @@ def calculate_points(points_to_calc, data_file, file_key, existing_data, number_
     else:
         print('points exist for this line')
 
-
+# this is the method that calls upon the calculation to find the current depending on the settings required by point.
+# it appends the results onto an array held by calculate_points.
 def current_point(point, calculated_points):
     su.super_conductor = point[Super_Con_name]
 
