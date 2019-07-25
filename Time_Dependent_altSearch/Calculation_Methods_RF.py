@@ -148,13 +148,12 @@ def make_expanded_diff_matrix(gate, bias, n_set):
     return A
 
 ########################################################################################################################
-def data_location_extraction(data_points):
+def data_location_extraction_array(data_points):
     all_points = list()
     for item in data_points:
         all_points.append(copy.deepcopy(item))
     for items in all_points:
         del items[Gate_Amp_name]
-        del items[Current_name]
 
     seen = set()
     unique_items = []
@@ -167,9 +166,29 @@ def data_location_extraction(data_points):
     return unique_items
 
 
+def data_location_extraction(data_point):
+    location = copy.deepcopy(data_point)
+    del location[Gate_Amp_name]
+    return location
 
-def file_key(data_location):
-    return
+
+# Method to create a key for the hdf5 file based on the setup of the device being modelled.
+def key_creation(data_location):
+    key = Gate_Func_name +": "+ data_location[Gate_Func_name].__name__ +", "+ \
+          Gate_Occ_Cent_name +": "+ str(data_location[Gate_Occ_Cent_name]) +", "+\
+          Bias_Func_name+": "+ data_location[Bias_Func_name].__name__ +", "+\
+          Time_Period_name+": "+ str(data_location[Time_Period_name])+", "+\
+          Number_of_Periods_name+": "+str(data_location[Number_of_Periods_name])+", "+\
+          Number_of_Steps_name+": "+str(data_location[Number_of_Steps_name])+", "+\
+          States_name+": "+str(data_location[States_name])+", "+ \
+          Thermal_E_name+": "+str(data_location[Thermal_E_name])+", "+\
+          Leak_name+": "+ str(data_location[Leak_name])+", "+ \
+          Charge_E_name+": "+str(data_location[Charge_E_name])+", "+\
+          Super_Con_name+": "+str(data_location[Super_Con_name])
+    return key
+
+
+
 
 
 def fetch_data(data_file, file_key):
@@ -314,6 +333,19 @@ def check_tested_settings(file,key):
     print(fetched_data.to_string())
 
 if __name__ == '__main__':
-    data = [{Gate_Amp_name:1,Current_name:1,"something":2,"something2":4,"something3":4,"something4":4},
-            {Gate_Amp_name:1,Current_name:1,"something":2,"something2":4,"something3":4,"something4":4}]
-    print data_location_extraction(data)
+    input = create_data_point_dict(
+        gate_amp=su.rounded_linspace(0.0, 1.3, 66),
+        gate_func=su.gate_curve,
+        gate_occ_cent=-0.5,
+        bias_function=su.bias_unitary,
+        period=1e6,
+        number_of_periods=1,
+        time_steps=150,
+        n_set=2,
+        temp=1e-2,
+        leak=1e-10,
+        charge_energy=1.,
+        superconductor=True
+    )
+
+    print key_creation(input)
