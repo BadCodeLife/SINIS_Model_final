@@ -53,11 +53,7 @@ def time_array_calc(charging_energy, time_period, number_of_periods, number_of_s
 
 
 ########################################################################################################################
-# makes the matrix that is defined by the relation dP(n)/dt = gamma(+)P(n-1)+gamma(-)P(n+1)-gamma(o)P(n).
-# the matrix is defiend by the normalised gate voltage and normalised bias voltage.
-# n_set defines the values of n considered on the diagonal.
-# matrix assumes that P(n+1) = 0 on the upper end of n_set and P(n-1) on the lower end of n_set.
-# This is an old method that was used as a concept. For an improved version, see make_diff_matrix
+
 def make_matrix(gate, bias, n_set):
     dim = len(n_set)
     matrix = sp.zeros((dim, dim))
@@ -70,8 +66,6 @@ def make_matrix(gate, bias, n_set):
     return matrix
 
 
-# creates a vector that defines the overall tunnelling rate for junction 1 for all n states in n_set.
-# This is an old version used as proof of concept. see make_tunnel_vector_v2
 def make_tunnel_vector(gate, bias, n_set):
     dim = len(n_set)
     out = sp.array([])
@@ -80,9 +74,6 @@ def make_tunnel_vector(gate, bias, n_set):
     return out
 
 
-# creates a matrix of the reciprocal relationship in make_matrix, as well as appending bellow the vector from
-# make_tunnel_vector. appended to the side it makes the vector (0,1) which allows the calculation to produce a matrix
-# for which an exponent exists.
 def expand_matrix(gate, bias, n_set):
     dim = len(n_set)
     matrix = make_matrix(gate, bias, n_set)
@@ -94,9 +85,6 @@ def expand_matrix(gate, bias, n_set):
     return A
 
 
-# exponentiates the expanded matrix, creating a time evolution operator for the vector P.
-# n_set defines the states considered during the operation cycle and time_array defines the time steps used to
-# calculate it.
 def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
     time_step = time_array[1]
     U = None
@@ -113,8 +101,6 @@ def exponential_matrix(gate_amp, gate_function, bias_func, n_set, time_array):
     return U
 
 
-# finds the probability distribution at the start of the operation cycle.
-# operates under the assumption that distribution at the start of the cycle is the same as at the end.
 def probability_calculation(U, n_set):
     dim = len(n_set)
     u = U[:dim, :dim]
@@ -127,13 +113,11 @@ def probability_calculation(U, n_set):
 
     return vector
 
-# creates an expanded probability vector from the one calculated at the start of the cycle. The final value in the
-# array represents the current transferred so far in electrons.
+
 def expand_probability(p):
     return sp.append(p, 0)
 
 
-# finds the current over the number of cycles defined by the time_array.
 def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_periods):
     dim = len(n_set)
     U = exponential_matrix(gate_amp, gate_func, bias_func, n_set, time_array)
@@ -147,7 +131,6 @@ def current_calc(gate_amp, gate_func, bias_func, n_set, time_array, number_of_pe
 
 # will find all tunnel events possible for a n_g, V combination for the states in n_set
 # output array is two dimensional, with [n][1+,1-,2+,2-] as the locations
-# used to cut down on calculation times.
 def tunnel_array(gate, bias, n_set):
     output_array = sp.array([])
     for n in n_set:
@@ -162,12 +145,6 @@ def tunnel_array(gate, bias, n_set):
     return output_array
 
 
-# makes the matrix that is defined by the relation dP(n)/dt = gamma(+)P(n-1)+gamma(-)P(n+1)-gamma(o)P(n).
-# the matrix is defiend by the normalised gate voltage and normalised bias voltage.
-# n_set defines the values of n considered on the diagonal.
-# matrix assumes that P(n+1) = 0 on the upper end of n_set and P(n-1) on the lower end of n_set.
-# This method uses a tunnelling array (t_array) to save on repeated calculations. This method saved on calculation times
-# by roughly 60%.
 def make_diff_matrix(t_array):
     dim = len(t_array)
     matrix = sp.zeros((dim, dim))
@@ -180,8 +157,6 @@ def make_diff_matrix(t_array):
     return matrix
 
 
-# creates a vector that defines the overall tunnelling rate for junction 1 for all n states in n_set.
-# This method saves on repeated calculations by using a t_array, containing all the relevent tunneling values.
 def make_tunnel_vec_v2(t_array):
     dim = len(t_array)
     out = sp.array([])
@@ -191,12 +166,6 @@ def make_tunnel_vec_v2(t_array):
     return out
 
 
-# creates a matrix of the reciprocal relationship in make_matrix, as well as appending bellow the vector from
-# make_tunnel_vector. appended to the side it makes the vector (0,1) which allows the calculation to produce a matrix
-# for which an exponent exists.
-# This method uses t_array to cut down on calculation time in make_diff_matrix and make_tunnel_vec_v2. This is
-# because, most of the values are repeated between different values inside the recurrence relationship outlined in the
-# thesis.
 def make_expanded_diff_matrix(gate, bias, n_set):
     dim = len(n_set)
     t_array = tunnel_array(gate, bias, n_set)
@@ -211,8 +180,21 @@ def make_expanded_diff_matrix(gate, bias, n_set):
     return A
 
 ########################################################################################################################
+def data_location_extraction(data_points):
+    all_points = list()
+    for item in data_points:
+        all_points.append(copy.deepcopy(item))
+    for items in all_points:
+        items.delete(Gate_Amp_name)
+        items.delete(Current_name)
+    return 0
 
-# gathers existing data, as well as defining data if the files are empty.
+
+
+def file_key(data_location):
+    return
+
+
 def fetch_data(data_file, file_key):
     try:
         fetched_data = pd.DataFrame(pd.read_hdf(data_file, file_key, mode='r'))
@@ -223,12 +205,7 @@ def fetch_data(data_file, file_key):
                                              Current_name})
     return fetched_data
 
-# finds a data point within the existing data. This uses dictionary methods to confirm that the names are being
-# used consistently. the method returns the index location of the data point within the existing data. This is in the
-# form of the array.
-# this is because the editor I used could help me keep track of the names since a lot of terms were being compared.
-# this method is slightly slow when it comes to retrieving data, and this might be something worth
-# improving in later iterations.
+
 def data_query(data_point, existing_data):
     point_locations = existing_data[
         (existing_data[Gate_Amp_name] == data_point[Gate_Amp_name]) &
@@ -247,9 +224,6 @@ def data_query(data_point, existing_data):
     return point_locations
 
 
-# this methods confirms if one of the required data points is within the existing data.
-# if multiple indices are returned it will notify that something has gone wrong leading to a data point being
-# calculated twice.
 def non_existing_points(data_points, existing_data):
     points_to_calc = list(data_points)
     for points in data_points:
@@ -265,10 +239,7 @@ def non_existing_points(data_points, existing_data):
             quit()
     return points_to_calc
 
-# divides up the calculation of data points among cpu cores available. This leaves 2 cores unused. This is so the device
-# can still be used while the calculations are being preformed. If this isn't desired, number_of_cores can be used to
-# change the number of cores used during calculation.
-# once all the cores have done the one data point assigned to them, they will save the existing data file
+
 def calculate_points(points_to_calc, data_file, file_key, existing_data, number_of_cores=(mp.cpu_count() - 2)):
     if len(points_to_calc) != 0:
         with mp.Manager() as manager:
