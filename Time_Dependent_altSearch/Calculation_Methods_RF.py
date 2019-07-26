@@ -21,6 +21,8 @@ Charge_E_name = 'Charging_Energy_(Delta)'  # charging energy of the island
 Super_Con_name = 'Superconducting'
 Current_name = 'Current_(ef)'
 
+File = 'Data_storage.h5'
+
 
 # Method that makes a more formal definition of what the expected dictionary for a data point should be.
 # This is an incomplete DataPoint as it does not include the expectation value of current 'Current'
@@ -187,6 +189,32 @@ def key_creation(data_location):
           Super_Con_name+": "+str(data_location[Super_Con_name])
     return key
 
+
+def fetch_data_v2(data_file,file_key):
+    try:
+        fetched_data = pd.DataFrame(pd.read_hdf(data_file, file_key, mode='r'))
+    except:
+        fetched_data = pd.DataFrame(columns={Gate_Amp_name, Current_name})
+    return fetched_data
+
+
+def collect_data(desired_point_set, points_to_calc):
+    location = data_location_extraction(desired_point_set)
+    key = key_creation(location)
+    data_stored = fetch_data_v2(File,key)
+
+    pseudo_point = copy.deepcopy(desired_point_set)
+
+    for gate_amp in desired_point_set[Gate_Amp_name]:
+        index_location = data_stored[(data_stored[Gate_Amp_name]==gate_amp)]
+        if len(index_location) == 0:
+            pseudo_point[Gate_Amp_name] == gate_amp
+            points_to_calc.append(pseudo_point)
+        elif len(index_location) == 1:
+            data_stored.drop(index_location)
+        else:
+            print('point has mulitple values, please check: \n'+key+', '+Gate_Amp_name+': '+str(gate_amp))
+            quit()
 
 
 
