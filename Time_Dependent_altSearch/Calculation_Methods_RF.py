@@ -198,7 +198,9 @@ def fetch_data_v2(data_file,file_key):
     return fetched_data
 
 
-def collect_data(desired_point_set, points_to_calc):
+# method that confirms if a data point has been calculated before
+# appends all points not calculated to list points_to_calc
+def add_point_to_calc(desired_point_set, points_to_calc):
     location = data_location_extraction(desired_point_set)
     key = key_creation(location)
     data_stored = fetch_data_v2(File,key)
@@ -217,6 +219,19 @@ def collect_data(desired_point_set, points_to_calc):
             quit()
 
 
+def data_collection(desired_point_set):
+    location = data_location_extraction(desired_point_set)
+    key = key_creation(location)
+    data_available = fetch_data_v2(File,key)
+
+    collected_data = list()
+
+    for gate_amp in  desired_point_set[Gate_Amp_name]:
+        index_location = data_available[(data_available==gate_amp)]
+        current = data_available.at[index_location,Current_name]
+        collected_data.append([gate_amp,current])
+
+    return collected_data
 
 
 def fetch_data(data_file, file_key):
